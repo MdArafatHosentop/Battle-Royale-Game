@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini Battle Royale</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1e1e1e;
+        }
+        canvas {
+            background: #2e8b57;
+            display: block;
+        }
+        #health {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="health">Health: 100</div>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let player = {
+    x: 200,
+    y: 200,
+    size: 20,
+    color: "blue",
+    speed: 5,
+    health: 100
+};
+
+let bullets = [];
+let enemies = [];
+
+function spawnEnemy(){
+    enemies.push({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height,
+        size: 20,
+        color: "red",
+        speed: 2,
+        health: 50
+    });
+}
+
+setInterval(spawnEnemy, 3000);
+
+document.addEventListener("keydown", e => {
+    if(e.key === "w") player.y -= player.speed;
+    if(e.key === "s") player.y += player.speed;
+    if(e.key === "a") player.x -= player.speed;
+    if(e.key === "d") player.x += player.speed;
+});
+
+document.addEventListener("click", e => {
+    bullets.push({
+        x: player.x,
+        y: player.y,
+        dx: e.clientX - player.x,
+        dy: e.clientY - player.y
+    });
+});
+
+function update(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.size, player.size);
+
+    bullets.forEach((b, i)=>{
+        b.x += b.dx * 0.02;
+        b.y += b.dy * 0.02;
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(b.x, b.y, 5, 5);
+    });
+
+    enemies.forEach((enemy, ei)=>{
+        let dx = player.x - enemy.x;
+        let dy = player.y - enemy.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+
+        enemy.x += dx/dist * enemy.speed;
+        enemy.y += dy/dist * enemy.speed;
+
+        ctx.fillStyle = enemy.color;
+        ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+
+        if(dist < 20){
+            player.health -= 1;
+            document.getElementById("health").innerText = "Health: " + player.health;
+        }
+
+        bullets.forEach((b, bi)=>{
+            if(
+                b.x < enemy.x + enemy.size &&
+                b.x + 5 > enemy.x &&
+                b.y < enemy.y + enemy.size &&
+                b.y + 5 > enemy.y
+            ){
+                enemies.splice(ei,1);
+                bullets.splice(bi,1);
+            }
+        });
+    });
+
+    if(player.health <= 0){
+        alert("Game Over!");
+        location.reload();
+    }
+
+    requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>
